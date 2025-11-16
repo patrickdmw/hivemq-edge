@@ -32,13 +32,28 @@ public class IfUtilTest {
 
         final HashMap<String, String> map = new HashMap<>();
         map.put("HIVEMQ_MQTTS_ENABLED", "false");
+        map.put("HIVEMQ_USERS_ENABLED", "true");
         setTempEnvVars(map);
 
-        final String testString = "${IF:HIVEMQ_MQTTS_ENABLED}hallo${IF:HIVEMQ_STUFF_ENABLED}GO AWAY${IF:HIVEMQ_STUFF_ENABLED}${IF:HIVEMQ_MQTTS_ENABLED}welt${IF:!HIVEMQ_HTTPS_ENABLED}!!!${IF:!HIVEMQ_HTTPS_ENABLED}9876543210";
+        final String testString = "" +
+                "${IF:HIVEMQ_MQTTS_ENABLED}" +
+                "hallo" +
+                "${IF:HIVEMQ_STUFF_ENABLED}" +
+                "GO AWAY" +
+                "${IF:HIVEMQ_STUFF_ENABLED}" +
+                "${IF:HIVEMQ_MQTTS_ENABLED}" +
+                "welt" +
+                "${IF:!HIVEMQ_HTTPS_ENABLED}" +
+                "!!!" +
+                "${IF:!HIVEMQ_HTTPS_ENABLED}" +
+                "9876543210" +
+                "${IF:HIVEMQ_USERS_ENABLED}" +
+                "user" +
+                "${IF:HIVEMQ_USERS_ENABLED}";
 
         final String result = IfUtil.replaceIfPlaceHolders(testString);
 
-        assertEquals("welt!!!9876543210", result);
+        assertEquals("welt!!!9876543210user", result);
     }
 
     /**
