@@ -34,7 +34,11 @@ public class RootResource {
 
     @GET
     public @NotNull Response getRoot() {
-        return Response.temporaryRedirect(URI.create("app/")).build();
+        String reverseProxyPathPrefix = System.getenv("REVERSE_PROXY_PATH_PREFIX");
+        if (reverseProxyPathPrefix == null || reverseProxyPathPrefix.isEmpty()) {
+            reverseProxyPathPrefix = "";
+        }
+        return Response.temporaryRedirect(URI.create(reverseProxyPathPrefix + "/app/")).build();
     }
 
 }
