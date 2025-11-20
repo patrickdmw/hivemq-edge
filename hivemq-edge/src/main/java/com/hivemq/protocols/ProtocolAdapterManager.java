@@ -170,7 +170,7 @@ public class ProtocolAdapterManager {
             log.info("Refreshing adapters");
 
             final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
-                    .map(configConverter::fromEntity)
+                    .map(configConverter::fromEntity) // TODO PatrickD this swallows exceptions
                     .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
 
             final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());

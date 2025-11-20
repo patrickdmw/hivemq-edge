@@ -19,6 +19,11 @@ out/
 /hivemq-edge/src/distribution/log/event.log
 /hivemq-edge/src/distribution/log/hivemq.log
 /hivemq-edge/src/distribution/log/migration.log
+/hivemq-edge/src/distribution/log/*.log
 /hivemq-edge/src/test/resources/opc-large-config.xml
 /edge-plugins/.kotlin/
 .vscode/
+
+# local configs
+hivemq-edge/src/distribution/conf/local-config.xml
+hivemq-edge/src/distribution/conf/0005-config.xml

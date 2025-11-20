@@ -241,6 +241,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull OpcUaSubscription subscription,
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<DataValue> values) {
+        // TODO PatrickD I think this fixes it
+        lastKeepAliveTimestamp = System.currentTimeMillis();
+        protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
+
         for (int i = 0; i < items.size(); i++) {
             final var tag = nodeIdToTag.get(items.get(i).getReadValueId().getNodeId());
             final String tn = tag.getName();

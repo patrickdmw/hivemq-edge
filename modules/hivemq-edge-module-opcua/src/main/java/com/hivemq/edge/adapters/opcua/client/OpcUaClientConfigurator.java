@@ -67,7 +67,8 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
                 .setSessionTimeout(UInteger.valueOf(sessionTimeoutMs))
                 .setRequestTimeout(UInteger.valueOf(requestTimeoutMs))
                 .setKeepAliveInterval(UInteger.valueOf(keepAliveIntervalMs))
-                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()));
+                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()))
+                ;
 
         log.info("Configured OPC UA timeouts: session={}ms, request={}ms, keepAlive={}ms, failuresAllowed={}",
                 config.getConnectionOptions().sessionTimeoutMs(), config.getConnectionOptions().requestTimeoutMs(), config.getConnectionOptions().keepAliveIntervalMs(), config.getConnectionOptions().keepAliveFailuresAllowed());

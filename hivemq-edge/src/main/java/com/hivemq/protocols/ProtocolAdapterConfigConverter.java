@@ -50,7 +50,7 @@ public class ProtocolAdapterConfigConverter {
         return new ProtocolAdapterConfig(entity.getAdapterId(),
                 entity.getProtocolId(),
                 entity.getConfigVersion(),
-                factory.convertConfigObject(mapper, entity.getConfig(), true),
+                factory.convertConfigObject(mapper, entity.getConfig(), true), // TODO PatrickD report this a a bug, because an exception can trigger here which is never logged
                 entity.getSouthboundMappings()
                         .stream()
                         .map(southbound -> southbound.toPersistence(mapper))

@@ -154,7 +154,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously
-            attemptConnection(conn, newlyParsedConfig, input);
+            attemptConnection(conn, newlyParsedConfig, input); // TODO PatrickD works as expected
 
             // Adapter starts successfully even if connection isn't established yet
             // Hardware may come online later and automatic retry will connect
@@ -264,7 +264,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                         return moduleServices;
                     }
                 };
-                attemptConnection(newConn, parsedConfig, input);
+                attemptConnection(newConn, parsedConfig, input); // TODO PatrickD this is the problem and triggers way too often
             } else {
                 log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently", adapterId);
             }
@@ -593,7 +593,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 return;
             }
 
-            log.info("Retrying connection for OPC UA adapter '{}'", adapterId);
+            log.info("Retrying connection for OPC UA adapter '{}'", adapterId); // TODO PatrickD works as expected
 
             // Create new connection object for retry
             final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,

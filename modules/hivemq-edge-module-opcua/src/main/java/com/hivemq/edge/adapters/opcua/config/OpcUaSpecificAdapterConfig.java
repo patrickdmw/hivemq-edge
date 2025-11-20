@@ -105,7 +105,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.auth = auth;
         this.tls = requireNonNullElseGet(tls, Tls::defaultTls);
         this.opcuaToMqttConfig = requireNonNullElseGet(opcuaToMqttConfig, OpcUaToMqttConfig::defaultOpcUaToMqttConfig);
-        this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
+        this.security = requireNonNullElse(security, new Security(SecPolicy.NONE, MsgSecurityMode.NONE));
         this.connectionOptions = requireNonNullElseGet(connectionOptions, ConnectionOptions::defaultConnectionOptions);
     }
 
