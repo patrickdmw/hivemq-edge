@@ -198,7 +198,7 @@ oci {
         }
     }
     imageDefinitions.register("main") {
-        imageName.set("hivemq/hivemq-edge")
+        imageName.set("hivemq-fork/hivemq-edge")
         allPlatforms {
             dependencies {
                 runtime(ociImages.eclipse.temurin.oci)

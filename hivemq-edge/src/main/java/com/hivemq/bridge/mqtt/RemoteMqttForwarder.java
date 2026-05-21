@@ -15,34 +15,28 @@
  */
 package com.hivemq.bridge.mqtt;
 
-import static com.hivemq.bridge.BridgeConstants.HMQ_BRIDGE_HOP_COUNT;
-import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
-
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.bridge.BridgeConstants;
 import com.hivemq.bridge.MqttForwarder;
-import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.metrics.PerBridgeMetrics;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
-import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserPropertiesBuilder;
-import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator;
-import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
-import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishBuilder;
-import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishResult;
+import com.hivemq.client.mqtt.mqtt3.message.publish.Mqtt3Publish;
+import com.hivemq.client.mqtt.mqtt3.message.publish.Mqtt3PublishBuilder;
 import com.hivemq.common.topic.TopicFilterProcessor;
 import com.hivemq.mqtt.message.QoS;
-import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,10 +45,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.hivemq.bridge.BridgeConstants.HMQ_BRIDGE_HOP_COUNT;
+import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class RemoteMqttForwarder implements MqttForwarder {
@@ -118,8 +112,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final int outflightMessages = outflightQueue.size();
 
             if (log.isDebugEnabled()) {
-                log.debug(
-                        "Stopping forwarder '{}' for bridge '{}', clearing {} queued and {} outflight message(s)",
+                log.debug("Stopping forwarder '{}' for bridge '{}', clearing {} queued and {} outflight message(s)",
                         id,
                         bridge.getId(),
                         queuedMessages,
@@ -148,8 +141,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             }
 
             if (log.isInfoEnabled() && (clearedQueued > 0 || clearedOutflight > 0)) {
-                log.info(
-                        "Forwarder '{}' stopped, cleared {} queued and {} outflight message(s)",
+                log.info("Forwarder '{}' stopped, cleared {} queued and {} outflight message(s)",
                         id,
                         clearedQueued,
                         clearedOutflight);
@@ -166,8 +158,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (log.isTraceEnabled()) {
-            log.trace(
-                    "Forwarder '{}' received message on topic '{}' with QoS {} for bridge '{}'",
+            log.trace("Forwarder '{}' received message on topic '{}' with QoS {} for bridge '{}'",
                     id,
                     publish.getTopic(),
                     publish.getQoS(),
@@ -195,8 +186,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             if (bridge.isLoopPreventionEnabled() && hopCount > 0 && hopCount >= bridge.getLoopPreventionHopCount()) {
                 perBridgeMetrics.getLoopPreventionForwardDropCounter().inc();
                 if (log.isDebugEnabled()) {
-                    log.debug(
-                            "Local message on topic '{}' ignored for bridge '{}', max hop count exceeded",
+                    log.debug("Local message on topic '{}' ignored for bridge '{}', max hop count exceeded",
                             publish.getTopic(),
                             bridge.getId());
                 }
@@ -209,8 +199,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                 if (MqttTopicFilter.of(exclude).matches(MqttTopicFilter.of(publish.getTopic()))) {
                     perBridgeMetrics.getRemotePublishExcludedCounter().inc();
                     if (log.isDebugEnabled()) {
-                        log.debug(
-                                "Message on topic '{}' excluded by filter '{}' for bridge '{}'",
+                        log.debug("Message on topic '{}' excluded by filter '{}' for bridge '{}'",
                                 publish.getTopic(),
                                 exclude,
                                 bridge.getId());
@@ -229,57 +218,52 @@ public class RemoteMqttForwarder implements MqttForwarder {
                 finishProcessing(originalQoS, publish.getUniqueId(), queueId);
                 return;
             }
-            Futures.addCallback(
-                    bridgeInterceptorHandler.interceptOrDelegateOutbound(
-                            convertedPublish, MoreExecutors.newDirectExecutorService(), bridge),
-                    new FutureCallback<>() {
-                        @Override
-                        public void onSuccess(final @Nullable BridgeInterceptorHandler.InterceptorResult result) {
-                            try {
-                                if (result == null) {
-                                    finishProcessing(originalQoS, publish.getUniqueId(), queueId);
-                                    return;
-                                }
+            Futures.addCallback(bridgeInterceptorHandler.interceptOrDelegateOutbound(convertedPublish,
+                    MoreExecutors.newDirectExecutorService(),
+                    bridge), new FutureCallback<>() {
+                @Override
+                public void onSuccess(final @Nullable BridgeInterceptorHandler.InterceptorResult result) {
+                    try {
+                        if (result == null) {
+                            finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                            return;
+                        }
+                        if (log.isDebugEnabled()) {
+                            final long durationMicros = (System.nanoTime() - interceptorStartTime) / 1000;
+                            log.debug(
+                                    "Interceptor chain completed in {} μs with outcome {} for message on topic '{}' for bridge '{}'",
+                                    durationMicros,
+                                    result.getOutcome(),
+                                    publish.getTopic(),
+                                    bridge.getId());
+                        }
+
+                        switch (result.getOutcome()) {
+                            case DROP -> {
                                 if (log.isDebugEnabled()) {
-                                    final long durationMicros = (System.nanoTime() - interceptorStartTime) / 1000;
-                                    log.debug(
-                                            "Interceptor chain completed in {} μs with outcome {} for message on topic '{}' for bridge '{}'",
-                                            durationMicros,
-                                            result.getOutcome(),
+                                    log.debug("Message on topic '{}' dropped by interceptor for bridge '{}'",
                                             publish.getTopic(),
                                             bridge.getId());
                                 }
-
-                                switch (result.getOutcome()) {
-                                    case DROP -> {
-                                        if (log.isDebugEnabled()) {
-                                            log.debug(
-                                                    "Message on topic '{}' dropped by interceptor for bridge '{}'",
-                                                    publish.getTopic(),
-                                                    bridge.getId());
-                                        }
-                                        finishProcessing(originalQoS, publish.getUniqueId(), queueId);
-                                    }
-                                    case SUCCESS ->
-                                        sendPublishToRemote(
-                                                Objects.requireNonNull(result.getPublish()),
-                                                queueId,
-                                                publish.getQoS(),
-                                                originalUniqueId);
-                                }
-                            } catch (final Throwable t) {
-                                handlePublishError(publish, t);
                                 finishProcessing(originalQoS, publish.getUniqueId(), queueId);
                             }
+                            case SUCCESS -> sendPublishToRemote(Objects.requireNonNull(result.getPublish()),
+                                    queueId,
+                                    publish.getQoS(),
+                                    originalUniqueId);
                         }
+                    } catch (final Throwable t) {
+                        handlePublishError(publish, t);
+                        finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                    }
+                }
 
-                        @Override
-                        public void onFailure(final @NotNull Throwable t) {
-                            handlePublishError(publish, t);
-                            finishProcessing(originalQoS, publish.getUniqueId(), queueId);
-                        }
-                    },
-                    currentExecutorService);
+                @Override
+                public void onFailure(final @NotNull Throwable t) {
+                    handlePublishError(publish, t);
+                    finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                }
+            }, currentExecutorService);
         } catch (final Exception e) {
             handlePublishError(publish, e);
             finishProcessing(originalQoS, publish.getUniqueId(), queueId);
@@ -287,7 +271,9 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     private void finishProcessing(
-            final @NotNull QoS originalQoS, final @NotNull String uniqueId, final @NotNull String queueId) {
+            final @NotNull QoS originalQoS,
+            final @NotNull String uniqueId,
+            final @NotNull String queueId) {
         inflightCounter.decrementAndGet();
         final var afterForwardCallback = this.afterForwardCallback;
         if (afterForwardCallback != null) {
@@ -311,14 +297,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private @NotNull PUBLISH convertPublishAfterBridge(final @NotNull PUBLISH publish, final int hopCount) {
         final MqttTopic modifiedTopic = convertTopic(localSubscription.getDestination(), publish.getTopic());
         final QoS modifiedQoS = convertQos(localSubscription.getMaxQoS(), publish.getQoS());
-        final PUBLISHFactory.Mqtt5Builder mqtt5Builder = new PUBLISHFactory.Mqtt5Builder();
-        mqtt5Builder.fromPublish(publish);
-        mqtt5Builder.withTopic(modifiedTopic.toString());
-        mqtt5Builder.withQoS(modifiedQoS);
-        mqtt5Builder.withOnwardQos(modifiedQoS);
-        mqtt5Builder.withRetain(localSubscription.isPreserveRetain() && publish.isRetain());
-        mqtt5Builder.withUserProperties(convertUserProperties(publish.getUserProperties(), hopCount));
-        return mqtt5Builder.build();
+        final PUBLISHFactory.Mqtt3Builder mqtt3Builder = new PUBLISHFactory.Mqtt3Builder();
+        mqtt3Builder.fromPublish(publish);
+        mqtt3Builder.withTopic(modifiedTopic.toString());
+        mqtt3Builder.withQoS(modifiedQoS);
+        mqtt3Builder.withOnwardQos(modifiedQoS);
+        mqtt3Builder.withRetain(localSubscription.isPreserveRetain() && publish.isRetain());
+        return mqtt3Builder.build();
     }
 
     private synchronized void sendPublishToRemote(
@@ -329,8 +314,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         if (!remoteMqttClient.isConnected()) {
             queue.add(new BufferedPublishInformation(queueId, originalUniqueId, originalQoS, publish));
             if (log.isTraceEnabled()) {
-                log.trace(
-                        "Remote client disconnected, buffering message on topic '{}' for bridge '{}', buffer size: {}",
+                log.trace("Remote client disconnected, buffering message on topic '{}' for bridge '{}', buffer size: {}",
                         publish.getTopic(),
                         bridge.getId(),
                         queue.size());
@@ -344,13 +328,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
         sendBufferedMessages();
 
         final long publishStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-        final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
-        final CompletableFuture<Mqtt5PublishResult> publishResult =
-                remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
+        final Mqtt3Publish mqtt3Publish = convertPublishForClient(publish);
+        final CompletableFuture<Mqtt3Publish> publishResult =
+                remoteMqttClient.getMqtt3Client().publish(mqtt3Publish);
         final OutflightPublishInformation outflightPublishInformation =
                 new OutflightPublishInformation(queueId, publish.getUniqueId());
         outflightQueue.add(outflightPublishInformation);
-        publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
+        publishResult.whenComplete((mqtt3PublishResult, throwable) -> {
             if (throwable != null) {
                 handlePublishError(publish, throwable);
                 // On failure, reset the inflight marker so the message can be retried
@@ -360,8 +344,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                 if (log.isDebugEnabled()) {
                     final long durationMicros = (System.nanoTime() - publishStartTime) / 1000;
-                    log.debug(
-                            "Successfully published message on topic '{}' to remote broker for bridge '{}' in {} μs",
+                    log.debug("Successfully published message on topic '{}' to remote broker for bridge '{}' in {} μs",
                             publish.getTopic(),
                             bridge.getId(),
                             durationMicros);
@@ -387,13 +370,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
         while (buffered != null && remoteMqttClient.isConnected()) {
             final BufferedPublishInformation current = buffered;
             final long publishStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-            final Mqtt5Publish mqtt5Publish = convertPublishForClient(current.publish);
-            final CompletableFuture<Mqtt5PublishResult> publishResult =
-                    remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
+            final Mqtt3Publish mqtt3Publish = convertPublishForClient(current.publish);
+            final CompletableFuture<Mqtt3Publish> publishResult =
+                    remoteMqttClient.getMqtt3Client().publish(mqtt3Publish);
             final OutflightPublishInformation outflightPublishInformation =
                     new OutflightPublishInformation(current.queueId, current.uniqueId);
             outflightQueue.add(outflightPublishInformation);
-            publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
+            publishResult.whenComplete((mqtt3PublishResult, throwable) -> {
                 if (throwable != null) {
                     handlePublishError(current.publish, throwable);
                     finishProcessingWithRetry(current.uniqueId, current.queueId);
@@ -421,8 +404,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         // while waiting for the remote broker to become available.
         // Unlike drainQueue(), this does NOT reset persistence inflight markers.
         if (log.isDebugEnabled()) {
-            log.debug(
-                    "Flushing {} buffered message(s) for forwarder '{}' on bridge '{}'",
+            log.debug("Flushing {} buffered message(s) for forwarder '{}' on bridge '{}'",
                     queue.size(),
                     id,
                     bridge.getId());
@@ -475,9 +457,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final int previousInflight = inflightCounter.getAndSet(0);
 
             if (log.isDebugEnabled() && (clearedOutflight > 0 || clearedQueued > 0 || previousInflight > 0)) {
-                log.debug(
-                        "Reconnection reset for bridge '{}': cleared {} outflight, {} queued messages, "
-                                + "reset inflightCounter from {} to 0",
+                log.debug("Reconnection reset for bridge '{}': cleared {} outflight, {} queued messages, " +
+                                "reset inflightCounter from {} to 0",
                         bridge.getId(),
                         clearedOutflight,
                         clearedQueued,
@@ -509,16 +490,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @NotNull
-    private Mqtt5Publish convertPublishForClient(final @NotNull PUBLISH publish) {
-        final Mqtt5PublishBuilder.Complete publishBuilder =
-                Mqtt5Publish.builder().topic(publish.getTopic());
-        publishBuilder
-                .payload(publish.getPayload())
+    private Mqtt3Publish convertPublishForClient(final @NotNull PUBLISH publish) {
+        final Mqtt3PublishBuilder.Complete publishBuilder = Mqtt3Publish.builder().topic(publish.getTopic());
+        publishBuilder.payload(publish.getPayload())
                 .qos(requireNonNullElse(MqttQos.fromCode(publish.getQoS().getQosNumber()), MqttQos.AT_MOST_ONCE));
-
-        if (publish.getMessageExpiryInterval() <= PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX) {
-            publishBuilder.messageExpiryInterval(publish.getMessageExpiryInterval());
-        }
 
         if (localSubscription.isPreserveRetain()) {
             publishBuilder.retain(publish.isRetain());
@@ -526,23 +501,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
             publishBuilder.retain(false);
         }
 
-        if (publish.getContentType() != null) {
-            publishBuilder.contentType(publish.getContentType());
-        }
-        if (publish.getCorrelationData() != null) {
-            publishBuilder.correlationData(publish.getCorrelationData());
-        }
-
-        if (publish.getPayloadFormatIndicator() != null) {
-            final int payloadIndicatorCode = publish.getPayloadFormatIndicator().getCode();
-            publishBuilder.payloadFormatIndicator(Mqtt5PayloadFormatIndicator.fromCode(payloadIndicatorCode));
-        }
-
-        if (publish.getResponseTopic() != null) {
-            publishBuilder.responseTopic(publish.getResponseTopic());
-        }
-
-        publishBuilder.userProperties(convertUserPropertiesForClient(publish.getUserProperties()));
         return publishBuilder.build();
     }
 
@@ -550,57 +508,18 @@ public class RemoteMqttForwarder implements MqttForwarder {
         if (destination == null || destination.equals(DEFAULT_DESTINATION_PATTERN)) {
             return MqttTopic.of(topic);
         }
-        return TopicFilterProcessor.modifyTopic(
-                destination,
+        return TopicFilterProcessor.modifyTopic(destination,
                 MqttTopic.of(topic),
                 Map.of(BridgeConstants.BRIDGE_NAME_TOPIC_REPLACEMENT_TOKEN, bridge.getId()));
     }
 
     private void handlePublishError(final @NotNull PUBLISH publish, final @NotNull Throwable throwable) {
         perBridgeMetrics.getPublishForwardFailCounter().inc();
-        log.warn(
-                "Unable to forward message on topic '{}' for bridge '{}', reason: {}",
+        log.warn("Unable to forward message on topic '{}' for bridge '{}', reason: {}",
                 publish.getTopic(),
                 id,
                 throwable.getMessage());
         log.debug("original exception", throwable);
-    }
-
-    private com.hivemq.mqtt.message.mqtt5.@NotNull Mqtt5UserProperties convertUserProperties(
-            final @NotNull com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties userProperties, final int hopCount) {
-        if (userProperties.asList().isEmpty()
-                && localSubscription.getCustomUserProperties().isEmpty()) {
-            if (bridge.isLoopPreventionEnabled()) {
-                return com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.of(
-                        MqttUserProperty.of(HMQ_BRIDGE_HOP_COUNT, "1"));
-            }
-            return com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.of();
-        }
-
-        final ImmutableList.Builder<@NotNull MqttUserProperty> builder = ImmutableList.builder();
-        for (final MqttUserProperty mqttUserProperty : userProperties.asList()) {
-            if (mqttUserProperty.getName().equals(HMQ_BRIDGE_HOP_COUNT)) {
-                continue;
-            }
-            builder.add(MqttUserProperty.of(mqttUserProperty.getName(), mqttUserProperty.getValue()));
-        }
-        for (final CustomUserProperty customUserProperty : localSubscription.getCustomUserProperties()) {
-            builder.add(MqttUserProperty.of(customUserProperty.getKey(), customUserProperty.getValue()));
-        }
-        if (bridge.isLoopPreventionEnabled()) {
-            builder.add(MqttUserProperty.of(HMQ_BRIDGE_HOP_COUNT, Integer.toString(hopCount + 1)));
-        }
-        return com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.build(builder);
-    }
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private @NotNull Mqtt5UserProperties convertUserPropertiesForClient(
-            final @NotNull com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties userProperties) {
-        final Mqtt5UserPropertiesBuilder builder = Mqtt5UserProperties.builder();
-        for (final MqttUserProperty mqttUserProperty : userProperties.asList()) {
-            builder.add(mqttUserProperty.getName(), mqttUserProperty.getValue());
-        }
-        return builder.build();
     }
 
     private int extractHopCount(final @NotNull PUBLISH publish) {
@@ -608,15 +527,16 @@ public class RemoteMqttForwarder implements MqttForwarder {
             return 0;
         }
         try {
-            return publish.getUserProperties().asList().stream()
+            return publish.getUserProperties()
+                    .asList()
+                    .stream()
                     .filter(prop -> prop.getName().equals(HMQ_BRIDGE_HOP_COUNT))
                     .map(prop -> Integer.parseInt(prop.getValue()))
                     .findFirst()
                     .orElse(0);
         } catch (final NumberFormatException e) {
             if (log.isDebugEnabled()) {
-                log.debug(
-                        "Max hop count could not be determined, user property `{}` is not a number",
+                log.debug("Max hop count could not be determined, user property `{}` is not a number",
                         HMQ_BRIDGE_HOP_COUNT);
             }
             return 0;
@@ -662,11 +582,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
                     "Force reconnect triggered for forwarder '{}' on bridge '{}' - disconnecting to trigger auto-reconnect",
                     id,
                     bridge.getId());
-            remoteMqttClient.getMqtt5Client().disconnect();
+            remoteMqttClient.getMqtt3Client().disconnect();
         } else {
             if (log.isDebugEnabled()) {
-                log.debug(
-                        "Force reconnect requested but client already disconnected for forwarder '{}' on bridge '{}'",
+                log.debug("Force reconnect requested but client already disconnected for forwarder '{}' on bridge '{}'",
                         id,
                         bridge.getId());
             }
@@ -693,11 +612,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
         executorService = service;
     }
 
-    private record BufferedPublishInformation(
-            @NotNull String queueId,
-            String uniqueId,
-            @NotNull QoS originalQoS,
-            @NotNull PUBLISH publish) {
+    private record BufferedPublishInformation(@NotNull String queueId, String uniqueId, @NotNull QoS originalQoS,
+                                              @NotNull PUBLISH publish) {
         private BufferedPublishInformation(
                 final @NotNull String queueId,
                 final @NotNull String uniqueId,
@@ -710,6 +626,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
         }
     }
 
-    private record OutflightPublishInformation(
-            @NotNull String queueId, @NotNull String uniqueId) {}
+    private record OutflightPublishInformation(@NotNull String queueId, @NotNull String uniqueId) {
+    }
 }

@@ -321,7 +321,7 @@ public class BridgeService {
             log.debug("Timeout exception details", e);
             try {
                 // Attempt forced disconnect on timeout - the underlying client may still have pending reconnections
-                client.getMqtt5Client().disconnect().get(5, TimeUnit.SECONDS);
+                client.getMqtt3Client().disconnect().get(5, TimeUnit.SECONDS);
                 log.info("Forced disconnect of bridge '{}' succeeded", bridgeId);
             } catch (final Exception forcedDisconnectEx) {
                 log.error(

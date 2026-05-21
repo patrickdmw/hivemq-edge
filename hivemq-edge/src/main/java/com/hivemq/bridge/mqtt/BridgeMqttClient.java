@@ -15,11 +15,6 @@
  */
 package com.hivemq.bridge.mqtt;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY;
-import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNullElse;
-
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -42,39 +37,38 @@ import com.hivemq.client.mqtt.MqttClientSslConfig;
 import com.hivemq.client.mqtt.MqttClientSslConfigBuilder;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import com.hivemq.client.mqtt.datatypes.MqttUtf8String;
 import com.hivemq.client.mqtt.lifecycle.MqttClientReconnector;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
-import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
-import com.hivemq.client.mqtt.mqtt5.exceptions.Mqtt5DisconnectException;
-import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling;
-import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscription;
-import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3ClientBuilder;
+import com.hivemq.client.mqtt.mqtt3.message.subscribe.Mqtt3Subscription;
+import com.hivemq.client.mqtt.mqtt3.message.subscribe.suback.Mqtt3SubAck;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNullElse;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BridgeMqttClient {
@@ -90,7 +84,7 @@ public class BridgeMqttClient {
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull HivemqId hivemqId;
-    private final @NotNull Mqtt5AsyncClient mqtt5Client;
+    private final @NotNull Mqtt3AsyncClient mqtt3Client;
     private final @NotNull ListeningExecutorService executorService;
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
     private final @NotNull EventService eventService;
@@ -116,7 +110,7 @@ public class BridgeMqttClient {
         this.bridgeInterceptorHandler = bridgeInterceptorHandler;
         this.eventService = eventService;
         this.metricRegistry = metricRegistry;
-        this.mqtt5Client = createClient();
+        this.mqtt3Client = createClient();
         this.perBridgeMetrics = new PerBridgeMetrics(bridge.getId(), metricRegistry);
         this.connected = new AtomicBoolean();
         this.stopped = new AtomicBoolean();
@@ -140,18 +134,12 @@ public class BridgeMqttClient {
             final SettableFuture<Void> startFuture = SettableFuture.create();
             startFutureRef.set(startFuture);
             final long connectStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-            mqtt5Client
+            mqtt3Client
                     .connectWith()
-                    .cleanStart(bridge.isCleanStart())
+                    .cleanSession(bridge.isCleanStart())
                     .keepAlive(bridge.getKeepAlive())
-                    .userProperties(Mqtt5UserProperties.builder()
-                            .add(
-                                    CLIENT_AGENT_PROPERTY,
-                                    String.format(CLIENT_AGENT_PROPERTY_VALUE, systemInformation.getHiveMQVersion()))
-                            .build())
-                    .sessionExpiryInterval(bridge.getSessionExpiry())
                     .send()
-                    .handleAsync((mqtt5ConnAck, throwable) -> {
+                    .handleAsync((mqtt3ConnAck, throwable) -> {
                         try {
                             if (stopped.get()) {
                                 if (log.isDebugEnabled()) {
@@ -181,22 +169,20 @@ public class BridgeMqttClient {
                                 operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                                 return null;
                             }
-                            if (mqtt5ConnAck.getReasonCode().isError()) {
-                                final String reasonString = mqtt5ConnAck
-                                        .getReasonString()
-                                        .map(Objects::toString)
-                                        .orElse("");
+                            if (mqtt3ConnAck.getReturnCode().isError()) {
+                                final String reasonString = mqtt3ConnAck
+                                        .getReturnCode().toString();
                                 log.error(
-                                        "Failed to connect bridge '{}', CONNACK returned reason code {}, reason string: '{}'",
+                                        "Failed to connect bridge '{}', CONNACK returned code {}, reason string: '{}'",
                                         bridge.getId(),
-                                        mqtt5ConnAck.getReasonCode(),
+                                        mqtt3ConnAck.getReturnCode(),
                                         reasonString);
                                 final var future = startFutureRef.getAndSet(null);
                                 if (future != null) {
                                     future.setException(new RuntimeException(
                                             "CONNACK error for bridge '" + bridge.getId() + "' connecting to "
                                                     + bridge.getHost() + ":" + bridge.getPort()
-                                                    + " - reason code: " + mqtt5ConnAck.getReasonCode()
+                                                    + " - return code: " + mqtt3ConnAck.getReturnCode()
                                                     + ", reason string: '" + reasonString + "'"));
                                 }
                                 operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
@@ -214,7 +200,7 @@ public class BridgeMqttClient {
                             // Note: drainQueue() and onReconnect() are handled by addConnectedListener
                             // which correctly distinguishes between initial connections and reconnections.
 
-                            final ImmutableList.Builder<@NotNull CompletableFuture<Mqtt5SubAck>> subFutures =
+                            final ImmutableList.Builder<@NotNull CompletableFuture<Mqtt3SubAck>> subFutures =
                                     new ImmutableList.Builder<>();
                             final int remoteSubCount =
                                     bridge.getRemoteSubscriptions().size();
@@ -232,16 +218,14 @@ public class BridgeMqttClient {
                                             sub.getFilters(),
                                             bridge.getId());
                                 }
-                                subFutures.add(mqtt5Client
+                                subFutures.add(mqtt3Client
                                         .subscribeWith()
                                         .addSubscriptions(sub.getFilters().stream()
-                                                .map(filter -> Mqtt5Subscription.builder()
+                                                .map(filter -> Mqtt3Subscription.builder()
                                                         .topicFilter(MqttTopicFilter.of(filter))
                                                         .qos(requireNonNullElse(
                                                                 MqttQos.fromCode(sub.getMaxQoS()),
                                                                 MqttQos.AT_MOST_ONCE))
-                                                        .retainAsPublished(sub.isPreserveRetain())
-                                                        .retainHandling(Mqtt5RetainHandling.DO_NOT_SEND)
                                                         .build())
                                                 .toList())
                                         .callback(new RemotePublishConsumer(
@@ -315,7 +299,7 @@ public class BridgeMqttClient {
             final SettableFuture<Void> stopFuture = SettableFuture.create();
             stopFutureRef.set(stopFuture);
             final long stopStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-            mqtt5Client.disconnect().handle((result, exception) -> {
+            mqtt3Client.disconnect().handle((result, exception) -> {
                 if (log.isDebugEnabled()) {
                     final long stopMicros = (System.nanoTime() - stopStartTime) / 1000;
                     log.debug("Bridge '{}' disconnected in {} μs", bridge.getId(), stopMicros);
@@ -352,8 +336,8 @@ public class BridgeMqttClient {
         return getOngoingOperation(currentState, OperationState.STOPPING);
     }
 
-    public @NotNull Mqtt5AsyncClient getMqtt5Client() {
-        return mqtt5Client;
+    public @NotNull Mqtt3AsyncClient getMqtt3Client() {
+        return mqtt3Client;
     }
 
     public @NotNull List<MqttForwarder> createForwarders() {
@@ -447,8 +431,8 @@ public class BridgeMqttClient {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private @NotNull Mqtt5AsyncClient createClient() {
-        final Mqtt5ClientBuilder builder = Mqtt5Client.builder();
+    private @NotNull Mqtt3AsyncClient createClient() {
+        final Mqtt3ClientBuilder builder = Mqtt3Client.builder();
         builder.identifier(bridge.getClientId());
         builder.serverHost(bridge.getHost());
         builder.serverPort(bridge.getPort());
@@ -468,7 +452,7 @@ public class BridgeMqttClient {
                 log.warn(
                         "Bridge '{}' connected but is marked as stopped - disconnecting immediately to prevent dangling client",
                         bridge.getId());
-                mqtt5Client.disconnect();
+                mqtt3Client.disconnect();
                 return;
             }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
@@ -512,14 +496,6 @@ public class BridgeMqttClient {
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
             String message = cause.getMessage();
-            if (cause instanceof final Mqtt5DisconnectException disconnectException) {
-                message += " Code: " + disconnectException.getMqttMessage().getReasonCode();
-                final Optional<MqttUtf8String> reasonString =
-                        disconnectException.getMqttMessage().getReasonString();
-                if (reasonString.isPresent()) {
-                    message += " Reason: " + reasonString.get();
-                }
-            }
             log.warn(
                     "Bridge '{}' disconnected from {}:{}: {}",
                     bridge.getId(),
