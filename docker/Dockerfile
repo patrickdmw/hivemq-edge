@@ -13,3 +13,5 @@ COPY docker/modules/hivemq-edge-data-hub-2026.8-proguarded.jar /opt/hivemq/modul
 #COPY docker/modules/hivemq-edge-module-plc4x-2026.8-all.jar /opt/hivemq/modules/
 COPY docker/modules/hivemq-edge-mqtt-persistence-2026.8-proguarded.jar /opt/hivemq/modules/
 #COPY docker/modules/hivemq-edge-pulse-agent-2026.8-proguarded.jar /opt/hivemq/modules/
+
+COPY docker/modules/hivemq-edge-mqttv3-protocol-adapter-1.2.7-all.jar /opt/hivemq/modules/

@@ -6,8 +6,8 @@ cd "$(dirname "${0}")" # go to the directory of this script
 tag=${1:-local}
 
 echo "Building hivemq-edge from source with modules, tagging as acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"
+echo "Then pushing the docker image to the registry."
 
-cd ..
-./gradlew -Dorg.gradle.java.home=/home/patrickd/.jdks/corretto-26.0.1 loadOciImage
+./build.sh "${tag}"
 
-docker build -f docker/Dockerfile . -t "acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"
+docker "push acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"
