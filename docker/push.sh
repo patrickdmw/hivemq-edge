@@ -10,4 +10,4 @@ echo "Then pushing the docker image to the registry."
 
 ./build.sh "${tag}"
 
-docker "push acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"
+docker push "acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"

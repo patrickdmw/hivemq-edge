@@ -176,7 +176,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         final PlcReadRequest readRequest = builder.build();
         // Ok - seems the reads are not thread safe
         synchronized (lock) {
-            return readRequest.execute();
+            return readRequest.execute(); // TODO PatrickD entrypoint to S7 failure
         }
     }
 

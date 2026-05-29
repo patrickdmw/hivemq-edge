@@ -22,6 +22,11 @@ plugins {
 
 group = "com.hivemq"
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
@@ -37,14 +42,26 @@ configurations.runtimeClasspath {
     exclude("io.netty", "netty-transport")
 }
 
+// OSGi annotations are compile-time only (bundle metadata); not resolvable/needed here
+configurations.all {
+    exclude(group = "org.osgi")
+}
+
 dependencies {
     compileOnly(libs.hivemq.edge.adaptersdk)
     compileOnly(libs.apache.commons.io)
 
-    implementation(libs.plc4j.s7)
-    implementation(libs.plc4j.ads)
-    implementation(libs.plc4j.api)
-    implementation(libs.plc4j.transport.raw.socket)
+    implementation("org.apache.plc4x:plc4j-driver-s7:0.14.0-SNAPSHOT")
+//    implementation(libs.plc4j.s7)
+    implementation("org.apache.plc4x:plc4j-driver-ads:0.14.0-SNAPSHOT")
+//     implementation(libs.plc4j.ads)
+    implementation("org.apache.plc4x:plc4j-api:0.14.0-SNAPSHOT")
+//     implementation(libs.plc4j.api)
+    implementation("org.apache.plc4x:plc4j-transports-raw-socket:0.14.0-SNAPSHOT")
+//     implementation(libs.plc4j.transport.raw.socket)
+
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.21")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
 
     constraints {
         implementation(libs.org.json)

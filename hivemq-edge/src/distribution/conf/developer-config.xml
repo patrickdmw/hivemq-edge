@@ -1,30 +1,161 @@
-<?xml version="1.0"?>
-<!--
-
-    Copyright 2023-present HiveMQ GmbH
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-    WARNING - This file is for use when running from your development environment ONLY,
-    it should not be used in production.
--->
-<hivemq>
-
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <internal/>
+    <config-version>1</config-version>
     <mqtt-listeners>
         <tcp-listener>
             <port>1883</port>
             <bind-address>0.0.0.0</bind-address>
         </tcp-listener>
     </mqtt-listeners>
-
+    <mqtt-sn-listeners/>
+    <mqtt>
+        <queued-messages>
+            <max-queue-size>1000</max-queue-size>
+            <strategy>discard</strategy>
+        </queued-messages>
+        <retained-messages>
+            <enabled>true</enabled>
+        </retained-messages>
+        <wildcard-subscriptions>
+            <enabled>true</enabled>
+        </wildcard-subscriptions>
+        <quality-of-service>
+            <max-qos>2</max-qos>
+        </quality-of-service>
+        <topic-alias>
+            <enabled>true</enabled>
+            <max-per-client>5</max-per-client>
+        </topic-alias>
+        <message-expiry>
+            <max-interval>4294967296</max-interval>
+        </message-expiry>
+        <session-expiry>
+            <max-interval>4294967295</max-interval>
+        </session-expiry>
+        <subscription-identifier>
+            <enabled>true</enabled>
+        </subscription-identifier>
+        <shared-subscriptions>
+            <enabled>true</enabled>
+        </shared-subscriptions>
+        <keep-alive>
+            <max-keep-alive>65535</max-keep-alive>
+            <allow-unlimited>true</allow-unlimited>
+        </keep-alive>
+        <packets>
+            <max-packet-size>268435460</max-packet-size>
+        </packets>
+        <receive-maximum>
+            <server-receive-maximum>10</server-receive-maximum>
+        </receive-maximum>
+    </mqtt>
+    <mqtt-sn>
+        <predefined-topics/>
+        <allow-empty-client-identifier>
+            <enabled>false</enabled>
+        </allow-empty-client-identifier>
+        <discovery>
+            <enabled>false</enabled>
+            <broadcast-addresses/>
+            <discovery-interval-seconds>30</discovery-interval-seconds>
+        </discovery>
+        <allow-anonymous-publish-minus-one>
+            <enabled>false</enabled>
+        </allow-anonymous-publish-minus-one>
+        <allow-waking-ping-session-hijack>
+            <enabled>false</enabled>
+        </allow-waking-ping-session-hijack>
+        <topic-registrations-held-during-sleep>
+            <enabled>false</enabled>
+        </topic-registrations-held-during-sleep>
+        <max-client-identifier-length>23</max-client-identifier-length>
+        <gateway-id>1</gateway-id>
+    </mqtt-sn>
+    <restrictions>
+        <max-connections>-1</max-connections>
+        <max-client-id-length>65535</max-client-id-length>
+        <max-topic-length>65535</max-topic-length>
+        <no-connect-idle-timeout>10000</no-connect-idle-timeout>
+        <incoming-bandwidth-throttling>0</incoming-bandwidth-throttling>
+    </restrictions>
+    <security>
+        <payload-format-validation>
+            <enabled>false</enabled>
+        </payload-format-validation>
+        <utf8-validation>
+            <enabled>true</enabled>
+        </utf8-validation>
+        <allow-empty-client-id>
+            <enabled>true</enabled>
+        </allow-empty-client-id>
+        <allow-request-problem-information>
+            <enabled>true</enabled>
+        </allow-request-problem-information>
+    </security>
+    <persistence>
+        <mode>in-memory</mode>
+    </persistence>
+    <mqtt-bridges/>
+    <admin-api>
+        <enabled>true</enabled>
+        <listeners/>
+        <generated-tokens>
+            <keySize>2048</keySize>
+            <issuer>HiveMQ-Edge</issuer>
+            <audience>HiveMQ-Edge-Api</audience>
+            <expiryTimeMinutes>30</expiryTimeMinutes>
+            <tokenEarlyEpochThresholdMinutes>2</tokenEarlyEpochThresholdMinutes>
+        </generated-tokens>
+        <users/>
+        <pre-login-notice>
+            <enabled>false</enabled>
+        </pre-login-notice>
+    </admin-api>
+    <uns>
+        <isa95>
+            <enabled>false</enabled>
+            <prefix-all-topics>false</prefix-all-topics>
+        </isa95>
+    </uns>
+    <dynamic-configuration>
+        <allow-configuration-export>false</allow-configuration-export>
+        <allow-mutable-configuration>true</allow-mutable-configuration>
+    </dynamic-configuration>
+    <usage-tracking>
+        <enabled>true</enabled>
+    </usage-tracking>
+    <protocol-adapters>
+        <protocol-adapter>
+            <adapterId>heller58507_he03</adapterId>
+            <protocolId>s7</protocolId>
+            <configVersion>1</configVersion>
+            <config>
+                <controllerType>S7_300</controllerType>
+                <host>localhost</host>
+                <keepAlive>true</keepAlive>
+                <port>10102</port>
+                <remoteRack>0</remoteRack>
+                <remoteRack2>0</remoteRack2>
+                <remoteSlot>0</remoteSlot>
+                <remoteSlot2>0</remoteSlot2>
+                <remoteTsap>0</remoteTsap>
+                <s7ToMqtt>
+                    <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+                    <pollingIntervalMillis>1000</pollingIntervalMillis>
+                    <publishChangedDataOnly>true</publishChangedDataOnly>
+                </s7ToMqtt>
+                <id>heller58507_he03</id>
+            </config>
+            <tags/>
+            <northboundMappings/>
+            <southboundMappings/>
+        </protocol-adapter>
+    </protocol-adapters>
+    <data-combiners/>
+    <asset-mappers/>
+    <pulse>
+        <managed-assets/>
+    </pulse>
+    <modules/>
 </hivemq>

@@ -31,3 +31,5 @@ out/
 
 # local files
 docker/modules
+libraries
+hivemq-edge/src/distribution/log/
