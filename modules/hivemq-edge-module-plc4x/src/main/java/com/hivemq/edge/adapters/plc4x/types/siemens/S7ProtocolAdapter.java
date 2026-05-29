@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.CSTRING;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.DATE;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.DATE_AND_TIME;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.LDATE;
@@ -71,7 +72,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
     // @formatter:on
 
     private final Set<Plc4xDataType.DATA_TYPE> SPECIAL_ADDRESS_SCHEME_TYPES = Set.of(
-            WCHAR, STRING, WSTRING, DATE, TIME, LTIME, TIME_OF_DAY, LDATE, LTIME_OF_DAY, DATE_AND_TIME, LDATE_AND_TIME);
+            WCHAR, STRING, WSTRING, CSTRING, DATE, TIME, LTIME, TIME_OF_DAY, LDATE, LTIME_OF_DAY, DATE_AND_TIME, LDATE_AND_TIME);
 
     private final Pattern SHORT_BLOCK_ADDRESS_PATTERN = Pattern.compile("^%DB\\d{1,7}:\\d{1,7}(\\.[0-7])*?:.*");
     private final Pattern BLOCK_ADDRESS_PATTERN =
@@ -126,6 +127,9 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
             // correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 ->
             // %IX20)
             if (SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()) {
+                if (tag.getDefinition().getDataType() == CSTRING) {
+                    return formattedAddress.replace("CSTRING", "STRING(32)"); // TODO extend data type for this, allow user to set string length via tag or format
+                }
                 return formattedAddress;
             }
             final Matcher blockMatcher = BLOCK_ADDRESS_PATTERN.matcher(formattedAddress);

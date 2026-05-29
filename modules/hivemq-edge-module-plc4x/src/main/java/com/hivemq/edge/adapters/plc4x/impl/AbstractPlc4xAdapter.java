@@ -292,7 +292,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 builder.scalar(ScalarType.DOUBLE)
                         .minimum(-1.7976931348623157e308d)
                         .maximum(1.7976931348623157e308d);
-            case CHAR, WCHAR, STRING, WSTRING -> builder.scalar(ScalarType.STRING);
+            case CHAR, WCHAR, STRING, WSTRING, CSTRING -> builder.scalar(ScalarType.STRING);
             case TIME, LTIME -> builder.scalar(ScalarType.DURATION);
             case DATE, LDATE -> builder.scalar(ScalarType.LOCAL_DATE);
             case TIME_OF_DAY, LTIME_OF_DAY -> builder.scalar(ScalarType.LOCAL_TIME);

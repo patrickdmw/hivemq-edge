@@ -142,7 +142,10 @@ public class ProtocolAdapterManager {
         try {
             Thread.currentThread().setContextClassLoader(contextLoader);
             return wrapperSupplier.get();
-        } finally {
+        } catch (Throwable t) {
+            log.error("Why the fuck would you not log this?", t);
+            return wrapperSupplier.get();
+        }  finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
     }

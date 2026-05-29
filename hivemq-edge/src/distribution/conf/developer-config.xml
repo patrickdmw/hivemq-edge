@@ -1,14 +1,410 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <internal/>
-    <config-version>1</config-version>
+<?xml version="1.0"?>
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="config.xsd">
+
     <mqtt-listeners>
         <tcp-listener>
             <port>1883</port>
             <bind-address>0.0.0.0</bind-address>
         </tcp-listener>
     </mqtt-listeners>
-    <mqtt-sn-listeners/>
+
+    <mqtt-bridges/>
+
+    <admin-api>
+        <enabled>true</enabled>
+        <listeners>
+            <http-listener>
+                <port>8080</port>
+                <bind-address>0.0.0.0</bind-address>
+            </http-listener>
+        </listeners>
+        <generated-tokens>
+            <keySize>2048</keySize>
+            <issuer>HiveMQ-Edge</issuer>
+            <audience>HiveMQ-Edge-Api</audience>
+            <expiryTimeMinutes>30</expiryTimeMinutes>
+            <tokenEarlyEpochThresholdMinutes>2</tokenEarlyEpochThresholdMinutes>
+        </generated-tokens>
+        <users>
+            <user>
+                <username>admin</username>
+                <password>admin</password>
+                <roles>
+                    <role>admin</role>
+                </roles>
+            </user>
+        </users>
+        <pre-login-notice>
+            <enabled>false</enabled>
+        </pre-login-notice>
+    </admin-api>
+
+    <uns>
+        <isa95>
+            <enabled>false</enabled>
+            <prefix-all-topics>false</prefix-all-topics>
+        </isa95>
+    </uns>
+
+    <dynamic-configuration>
+        <allow-configuration-export>false</allow-configuration-export>
+        <allow-mutable-configuration>true</allow-mutable-configuration>
+    </dynamic-configuration>
+
+    <usage-tracking>
+        <enabled>false</enabled>
+    </usage-tracking>
+
+    <protocol-adapters>
+        <protocol-adapter>
+            <adapterId>heller58507_he03</adapterId>
+            <protocolId>s7</protocolId>
+            <configVersion>1</configVersion>
+            <config>
+                <!-- from "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | Main" sheet -->
+                <id>heller58507_he03</id>
+                <host>localhost</host>
+                <port>10102</port>
+                <controllerType>S7_300</controllerType>
+                <keepAlive>true</keepAlive>
+
+                <!-- from "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | Main" sheet -->
+                <remoteRack>0</remoteRack>
+                <remoteRack2>0</remoteRack2>
+                <remoteSlot>2</remoteSlot>
+                <remoteSlot2>2</remoteSlot2>
+
+                <!-- default 0 -->
+                <remoteTsap>0</remoteTsap>
+
+                <s7ToMqtt>
+                    <!-- send mqtt message for every tag every poll interval, not just on changes -->
+                    <!-- TODO change back after testing to reduce number of messages -->
+                    <publishChangedDataOnly>false</publishChangedDataOnly>
+
+                    <!-- poll every 10s -->
+                    <pollingIntervalMillis>1000</pollingIntervalMillis>
+                    <!-- mark connection as failed after 10 unsuccessful attempts -->
+                    <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+                </s7ToMqtt>
+            </config>
+            <tags>
+<!--                 from "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                <tag>
+                    <name>status_production</name>
+                    <description>True if machine is producing</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:32.7</tagAddress> <!-- DB13B32.7 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_idle</name>
+                    <description>True if machine is idle</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:32.6</tagAddress> <!-- DB13B32.6 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_technical</name>
+                    <description>True if machine is in Technical_Failure state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:32.5</tagAddress> <!-- DB13B32.5 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_tool_changer</name>
+                    <description>True if machine is in Failure_Tool_Changer state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.0</tagAddress> <!-- DB13B38.0 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_tool_management</name>
+                    <description>True if machine is in Failure_Tool_Management state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.1</tagAddress> <!-- DB13B38.1 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_palletchanger</name>
+                    <description>True if machine is in Failure_PalletChanger state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.3</tagAddress> <!-- DB13B38.3 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_pallet_management</name>
+                    <description>True if machine is in Failure_Pallet_Management state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.4</tagAddress> <!-- DB13B38.4 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_drives</name>
+                    <description>True if machine is in Failure_Drives state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.5</tagAddress> <!-- DB13B38.5 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_media</name>
+                    <description>True if machine is in Failure_Media state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.6</tagAddress> <!-- DB13B38.6 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_general</name>
+                    <description>True if machine is in Failure_general state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:38.7</tagAddress> <!-- DB13B38.7 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>status_error_tool_magazine</name>
+                    <description>True if machine is in Failure_Tool_Magazine state</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:39.7</tagAddress> <!-- DB13B39.7 in excel -->
+                        <dataType>BOOL</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>ok_parts</name>
+                    <description>Number of ok parts</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:00</tagAddress> <!-- DB13D00 in excel -->
+                        <dataType>DWORD</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>nok_parts</name>
+                    <description>Number of not ok parts</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:04</tagAddress> <!-- DB13D04 in excel -->
+                        <dataType>DWORD</dataType>
+                    </definition>
+                </tag>
+
+
+                <tag>
+                    <name>Act_NC_Program</name>
+                    <description>Name of running program</description>
+                    <definition>
+                        <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
+                        <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
+                        <tagAddress>%DB13:52</tagAddress> <!-- DB13B52.32 in excel -->
+                        <dataType>CSTRING</dataType>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <tagName>status_production</tagName>
+                    <topic>ald/plc/heller58507_he03/statusProduction</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_idle</tagName>
+                    <topic>ald/plc/heller58507_he03/statusIdle</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_technical</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorTechnical</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_tool_changer</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorToolChanger</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_tool_management</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorToolManagement</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_palletchanger</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorPalletChanger</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_pallet_management</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorPalletManagement</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_drives</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorDrives</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_media</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorMedia</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_general</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorGeneral</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>status_error_tool_magazine</tagName>
+                    <topic>ald/plc/heller58507_he03/statusErrorToolMagazine</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>ok_parts</tagName>
+                    <topic>ald/plc/heller58507_he03/okParts</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>nok_parts</tagName>
+                    <topic>ald/plc/heller58507_he03/nokParts</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+
+                <northboundMapping>
+                    <tagName>Act_NC_Program</tagName>
+                    <topic>ald/plc/heller58507_he03/act_nc_program</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>true</includeMetadata>
+                    <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                </northboundMapping>
+            </northboundMappings>
+            <southboundMappings/>
+        </protocol-adapter>
+
+    </protocol-adapters>
+
+    <data-combiners/>
+
+    <asset-mappers/>
+
+    <pulse>
+        <managed-assets/>
+    </pulse>
+
+
     <mqtt>
         <queued-messages>
             <max-queue-size>1000</max-queue-size>
@@ -50,6 +446,7 @@
             <server-receive-maximum>10</server-receive-maximum>
         </receive-maximum>
     </mqtt>
+
     <mqtt-sn>
         <predefined-topics/>
         <allow-empty-client-identifier>
@@ -72,6 +469,7 @@
         <max-client-identifier-length>23</max-client-identifier-length>
         <gateway-id>1</gateway-id>
     </mqtt-sn>
+
     <restrictions>
         <max-connections>-1</max-connections>
         <max-client-id-length>65535</max-client-id-length>
@@ -93,69 +491,4 @@
             <enabled>true</enabled>
         </allow-request-problem-information>
     </security>
-    <persistence>
-        <mode>in-memory</mode>
-    </persistence>
-    <mqtt-bridges/>
-    <admin-api>
-        <enabled>true</enabled>
-        <listeners/>
-        <generated-tokens>
-            <keySize>2048</keySize>
-            <issuer>HiveMQ-Edge</issuer>
-            <audience>HiveMQ-Edge-Api</audience>
-            <expiryTimeMinutes>30</expiryTimeMinutes>
-            <tokenEarlyEpochThresholdMinutes>2</tokenEarlyEpochThresholdMinutes>
-        </generated-tokens>
-        <users/>
-        <pre-login-notice>
-            <enabled>false</enabled>
-        </pre-login-notice>
-    </admin-api>
-    <uns>
-        <isa95>
-            <enabled>false</enabled>
-            <prefix-all-topics>false</prefix-all-topics>
-        </isa95>
-    </uns>
-    <dynamic-configuration>
-        <allow-configuration-export>false</allow-configuration-export>
-        <allow-mutable-configuration>true</allow-mutable-configuration>
-    </dynamic-configuration>
-    <usage-tracking>
-        <enabled>true</enabled>
-    </usage-tracking>
-    <protocol-adapters>
-        <protocol-adapter>
-            <adapterId>heller58507_he03</adapterId>
-            <protocolId>s7</protocolId>
-            <configVersion>1</configVersion>
-            <config>
-                <controllerType>S7_300</controllerType>
-                <host>localhost</host>
-                <keepAlive>true</keepAlive>
-                <port>10102</port>
-                <remoteRack>0</remoteRack>
-                <remoteRack2>0</remoteRack2>
-                <remoteSlot>0</remoteSlot>
-                <remoteSlot2>0</remoteSlot2>
-                <remoteTsap>0</remoteTsap>
-                <s7ToMqtt>
-                    <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
-                    <pollingIntervalMillis>1000</pollingIntervalMillis>
-                    <publishChangedDataOnly>true</publishChangedDataOnly>
-                </s7ToMqtt>
-                <id>heller58507_he03</id>
-            </config>
-            <tags/>
-            <northboundMappings/>
-            <southboundMappings/>
-        </protocol-adapter>
-    </protocol-adapters>
-    <data-combiners/>
-    <asset-mappers/>
-    <pulse>
-        <managed-assets/>
-    </pulse>
-    <modules/>
 </hivemq>

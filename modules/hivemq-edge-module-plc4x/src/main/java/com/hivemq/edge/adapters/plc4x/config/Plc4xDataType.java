@@ -49,6 +49,7 @@ public class Plc4xDataType {
         WCHAR((short) 0x42, Short.class),
         STRING((short) 0x43, String.class),
         WSTRING((short) 0x44, String.class),
+        CSTRING((short) 0x72, String.class),
         TIME((short) 0x51, Duration.class),
         LTIME((short) 0x52, Duration.class),
         DATE((short) 0x53, LocalDate.class),

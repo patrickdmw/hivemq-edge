@@ -1,5 +1,10 @@
 group = "com.hivemq"
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")

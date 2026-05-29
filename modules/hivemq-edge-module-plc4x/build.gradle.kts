@@ -71,7 +71,7 @@ dependencies {
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation(libs.hivemq.edge.adaptersdk)
-    testImplementation(libs.plc4j.api)
+    testImplementation("org.apache.plc4x:plc4j-api:0.14.0-SNAPSHOT")
 
     testImplementation(libs.apache.commons.io)
 
@@ -93,7 +93,7 @@ tasks.test {
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
     from(provider { configurations.runtimeClasspath.get() })
-    into("${layout.buildDirectory}/deps/libs")
+    into(layout.buildDirectory.dir("deps/libs"))
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
