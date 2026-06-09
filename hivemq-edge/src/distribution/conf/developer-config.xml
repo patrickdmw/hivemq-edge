@@ -232,7 +232,7 @@
 <!--                        <tagAddress>%DB13:52.32</tagAddress> &lt;!&ndash; DB13B52.32 in excel &ndash;&gt;-->
 <!--                        <dataType>STRING</dataType>-->
                         <tagAddress>%DB13:52:String(32)</tagAddress> <!-- DB13B52.32 in excel -->
-                        <dataType>Null</dataType>
+                        <dataType>STRING</dataType>
                     </definition>
                 </tag>
             </tags>
