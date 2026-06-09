@@ -28,3 +28,8 @@ out/
 /hivemq-edge/src/test/resources/opc-large-config.xml
 /edge-plugins/.kotlin/
 .vscode/
+
+# local files
+docker/modules
+libraries
+hivemq-edge/src/distribution/log/
