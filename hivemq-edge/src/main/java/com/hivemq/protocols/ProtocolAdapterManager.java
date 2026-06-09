@@ -47,6 +47,7 @@ import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -173,9 +174,16 @@ public class ProtocolAdapterManager {
             executorService.submit(() -> {
                 log.info("Refreshing adapters");
 
-                final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
-                        .map(configConverter::fromEntity)
-                        .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
+                Map<String, ProtocolAdapterConfig> c;
+                try {
+                    c = configs.stream()
+                            .map(configConverter::fromEntity)
+                            .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
+                } catch (Exception e) {
+                    log.error("Error while trying to fetch protocol adapters: ", e);
+                    c = new HashMap<>();
+                }
+                final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = new HashMap<>(c);
 
                 final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
 

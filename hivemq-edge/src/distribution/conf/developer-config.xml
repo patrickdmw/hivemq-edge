@@ -64,7 +64,7 @@
             <config>
                 <!-- from "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | Main" sheet -->
                 <id>heller58507_he03</id>
-                <host>localhost</host>
+                <host>192.168.122.1</host>
                 <port>10102</port>
                 <controllerType>S7_300</controllerType>
                 <keepAlive>true</keepAlive>
@@ -72,8 +72,8 @@
                 <!-- from "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | Main" sheet -->
                 <remoteRack>0</remoteRack>
                 <remoteRack2>0</remoteRack2>
-                <remoteSlot>2</remoteSlot>
-                <remoteSlot2>2</remoteSlot2>
+                <remoteSlot>0</remoteSlot>
+                <remoteSlot2>0</remoteSlot2>
 
                 <!-- default 0 -->
                 <remoteTsap>0</remoteTsap>
@@ -229,8 +229,10 @@
                     <definition>
                         <!-- this is different from the format in the "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | H2000|5000" sheet -->
                         <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
-                        <tagAddress>%DB13:52</tagAddress> <!-- DB13B52.32 in excel -->
-                        <dataType>CSTRING</dataType>
+<!--                        <tagAddress>%DB13:52.32</tagAddress> &lt;!&ndash; DB13B52.32 in excel &ndash;&gt;-->
+<!--                        <dataType>STRING</dataType>-->
+                        <tagAddress>%DB13:52:String(32)</tagAddress> <!-- DB13B52.32 in excel -->
+                        <dataType>Null</dataType>
                     </definition>
                 </tag>
             </tags>

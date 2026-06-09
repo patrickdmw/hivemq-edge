@@ -79,6 +79,8 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
             Pattern.compile("^%DB\\d{1,7}\\.DB(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
     private final Pattern ADDRESS_PATTERN =
             Pattern.compile("^%.(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])?(?<shortOffset>(:\\d{1,7})?):(?<type>.*)");
+    private final Pattern FIXED_LENGTH_ADDRESS_PATTERN =
+            Pattern.compile("^%DB\\d{1,7}:\\d{1,7}(\\.[0-7])*?\\[(?<length>\\d{1,7})]:.*");
 
     public S7ProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -127,9 +129,6 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
             // correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 ->
             // %IX20)
             if (SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()) {
-                if (tag.getDefinition().getDataType() == CSTRING) {
-                    return formattedAddress.replace("CSTRING", "STRING(32)"); // TODO extend data type for this, allow user to set string length via tag or format
-                }
                 return formattedAddress;
             }
             final Matcher blockMatcher = BLOCK_ADDRESS_PATTERN.matcher(formattedAddress);
@@ -144,6 +143,20 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
                             correctedAddress);
                 }
 
+                return correctedAddress;
+            }
+
+            final Matcher fixedLengthMatcher = FIXED_LENGTH_ADDRESS_PATTERN.matcher(formattedAddress);
+            if (fixedLengthMatcher.matches()) {
+                final String correctedAddress = new StringBuilder(formattedAddress)
+                        .replace(fixedLengthMatcher.start("length") -1, fixedLengthMatcher.end("length") + 1, "") // replace the [ and ] as well
+                        + "(" + fixedLengthMatcher.group("length") + ")"; // append the length at the end to form a valid S7 address
+                if (log.isTraceEnabled()) {
+                    log.trace(
+                            "Correcting S7 tag address from '{}' to '{}' to include string length",
+                            formattedAddress,
+                            correctedAddress);
+                }
                 return correctedAddress;
             }
             final Matcher addressMatcher = ADDRESS_PATTERN.matcher(formattedAddress);
