@@ -67,7 +67,7 @@
                 <host>192.168.122.1</host>
                 <port>10102</port>
                 <controllerType>S7_300</controllerType>
-                <keepAlive>true</keepAlive>
+                <keepAlive>false</keepAlive> <!-- disable pinging locally, because the simulation server does not support it -->
 
                 <!-- from "PLCs-TWX-Lines-Stations-Devices-Tags.xlsx | Main" sheet -->
                 <remoteRack>0</remoteRack>
