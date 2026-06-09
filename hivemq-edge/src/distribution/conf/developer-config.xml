@@ -231,7 +231,7 @@
                         <!-- see https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter-tag-address for details on hivemq edge addressing format -->
 <!--                        <tagAddress>%DB13:52.32</tagAddress> &lt;!&ndash; DB13B52.32 in excel &ndash;&gt;-->
 <!--                        <dataType>STRING</dataType>-->
-                        <tagAddress>%DB13:52:String(32)</tagAddress> <!-- DB13B52.32 in excel -->
+                        <tagAddress>%DB13:52[32]</tagAddress> <!-- DB13B52.32 in excel -->
                         <dataType>STRING</dataType>
                     </definition>
                 </tag>
