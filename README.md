@@ -1,5 +1,26 @@
-gradle :hivemq-edge-module-plc4x:copyAllDependencies
+# Building code
 
+To build the docker image, run
+```bash
+./gradlew -Dorg.gradle.java.home=/home/patrickd/.jdks/corretto-26.0.1 loadOciImage
+```
+
+if that fails with unexpected errors, also update the other git repos (in the same parent as this one)
+- hivemq-edge-adapter-sdk/
+- hivemq-edge-extension-sdk/
+
+to the same tag version and retry.
+
+When `loadOciImage` works, but running in IntelliJ does not and fails with unexpected errors (mostly class loaders) run
+```bash
+./gradlew -Dorg.gradle.java.home=/home/patrickd/.jdks/corretto-26.0.1 :hivemq-edge-module-plc4x:copyAllDependencies
+```
+and again for other modules that might require rebuilding. Especially important after switching branches with different versions of that library.
+
+also checkout the [build](docker/build.sh) and [push](docker/push.sh) scripts for detailed commands to build the image
+
+
+# Errors
 
 org.apache.plc4x.java.api.exceptions.PlcProtocolException: Unsupported tag type null
     at org.apache.plc4x.java.s7.S7CotpConnection.onRead(S7CotpConnection.java:406)
