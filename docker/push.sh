@@ -5,9 +5,9 @@ cd "$(dirname "${0}")" # go to the directory of this script
 
 tag=${1:-local}
 
-echo "Building hivemq-edge from source with modules, tagging as acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"
+echo "Building hivemq-edge from source with modules, tagging as acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.9-mw-${tag}"
 echo "Then pushing the docker image to the registry."
 
 ./build.sh "${tag}"
 
-docker push "acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.8-mqtt3-${tag}"
+docker push "acriedweeushd.azurecr.io/hivemq/hivemq-edge:2026.9-mw-${tag}"

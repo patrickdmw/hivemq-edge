@@ -15,6 +15,9 @@
  */
 package com.hivemq.protocols;
 
+import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
+import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
@@ -74,9 +77,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
-import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manages the lifecycle of all protocol adapter instances.
@@ -187,8 +191,7 @@ public class ProtocolAdapterManager {
     /**
      * Returns the high-level manager state.
      *
-     * @return {@link ProtocolAdapterManagerState#Running} while refresh work is queued/running; otherwise
-     *         {@link ProtocolAdapterManagerState#Idle}
+     * @return {@link ProtocolAdapterManagerState#Running} while refresh work is queued/running; otherwise {@link ProtocolAdapterManagerState#Idle}
      */
     public @NotNull ProtocolAdapterManagerState getState() {
         return Objects.requireNonNull(managerState.get());
